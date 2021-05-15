@@ -1,6 +1,6 @@
 // this should be read before reading the code
 // http://devernay.free.fr/hacks/chip8/C8TECH10.HTM
-
+// https://en.wikipedia.org/wiki/CHIP-8
 use rand::Rng;
 
 #[allow(dead_code)]
