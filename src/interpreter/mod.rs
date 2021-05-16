@@ -202,7 +202,7 @@ fn execute(instruction: u16, em: &mut Emulator) {
             let (x, sub_inst) = extract_0xii(instruction);
             #[allow(unreachable_code)]
             match sub_inst {
-                0x0F => { // set Vx = delay timer value
+                0x07 => { // set Vx = delay timer value
                     em.reg[x] = em.delay_t;
                 }
                 0x0A => { // wait for key and store it in Vx
@@ -234,12 +234,12 @@ fn execute(instruction: u16, em: &mut Emulator) {
                     em.memory[(em.i + 2) as usize] = n as u8;
                 }
                 0x55 => { // store registers V0 to Vx in memory I
-                    for i in 0..x as u16 {
+                    for i in 0..=x as u16 {
                         em.memory[(em.i + i) as usize] = em.reg[i as usize];
                     }
                 }
                 0x65 => { // load V0 to Vx from memory at I
-                    for i in 0..x as u16 {
+                    for i in 0..=x as u16 {
                         em.reg[i as usize] = em.memory[(em.i + i) as usize]
                     }
                 }
