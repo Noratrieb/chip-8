@@ -11,7 +11,7 @@ use rand::Rng;
 
 #[derive(Debug, Clone)]
 #[allow(dead_code)]
-struct Emulator {
+struct Chip8Vm {
     memory: [u8; 4096],
     reg: [u8; 16],
     stack: [u16; 16],
@@ -22,7 +22,7 @@ struct Emulator {
     sound_t: u8,
 }
 
-impl Default for Emulator {
+impl Default for Chip8Vm {
     fn default() -> Self {
         Self {
             memory: [0; 4096],
@@ -37,7 +37,7 @@ impl Default for Emulator {
     }
 }
 
-impl Emulator {
+impl Chip8Vm {
     fn new() -> Self {
         Self::default()
     }
@@ -69,17 +69,17 @@ impl Emulator {
 
 
 pub fn run(program: &[u16]) {
-    let mut em = Emulator::default();
-    em.pc = 200;
+    let mut vm = Chip8Vm::default();
+    vm.pc = 200;
 
-    while em.pc < program.len() as u16 {
-        let instruction = program[em.pc as usize];
-        execute(instruction, &mut em);
-        em.next();
+    while vm.pc < program.len() as u16 {
+        let instruction = program[vm.pc as usize];
+        execute(instruction, &mut vm);
+        vm.next();
     }
 }
 
-fn execute(instruction: u16, em: &mut Emulator) {
+fn execute(instruction: u16, em: &mut Chip8Vm) {
     match instruction {
         0x00E0 => unimplemented!(), // clear display
         0x00EE => { // return subroutine
