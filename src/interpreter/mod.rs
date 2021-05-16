@@ -1,5 +1,6 @@
 //! # A CHIP-8 interpreter in Rust
-//! this should be read before reading the code
+//! resources
+//! https://github.com/mattmikolay/chip-8/wiki/Mastering-CHIP%E2%80%908
 //! http://devernay.free.fr/hacks/chip8/C8TECH10.HTM
 //! https://en.wikipedia.org/wiki/CHIP-8
 
@@ -37,6 +38,9 @@ impl Default for Emulator {
 }
 
 impl Emulator {
+    fn new() -> Self {
+        Self::default()
+    }
     fn push(&mut self, n: u16) {
         self.sp += 1;
         self.stack[self.sp as usize] = n;
@@ -66,6 +70,7 @@ impl Emulator {
 
 pub fn run(program: &[u16]) {
     let mut em = Emulator::default();
+    em.pc = 200;
 
     while em.pc < program.len() as u16 {
         let instruction = program[em.pc as usize];
@@ -141,16 +146,16 @@ fn execute(instruction: u16, em: &mut Emulator) {
                     em.reg[x] = em.reg[x].wrapping_sub(em.reg[y])
                 }
                 6 => { // SHR - shift right | shift Vx right by one bit, if the rightmost bit is 1 set flag
-                    em.set_flag((em.reg[x] & 0x0001) > 0);
-                    em.reg[x] >>= 1;
+                    em.set_flag((em.reg[y] & 0x0001) > 0);
+                    em.reg[x] = em.reg[y] >> 1;
                 }
                 7 => { // SUBN - Sub not borrow | subtract Vx from Vy and store it into Vx
                     em.set_flag(em.reg[y] > em.reg[x]);
                     em.reg[x] = em.reg[y].wrapping_sub(em.reg[x]);
                 }
                 0xE => { // SHL - Shift left | shift Vx left, if the leftmost bit is 1 set flag
-                    em.set_flag((em.reg[x] & 0x80) > 0);
-                    em.reg[x] <<= 1;
+                    em.set_flag((em.reg[y] & 0x80) > 0);
+                    em.reg[x] = em.reg[y] << 1;
                 }
                 _ => unreachable!("invalid instruction")
             }
@@ -235,12 +240,14 @@ fn execute(instruction: u16, em: &mut Emulator) {
                 }
                 0x55 => { // store registers V0 to Vx in memory I
                     for i in 0..=x as u16 {
-                        em.memory[(em.i + i) as usize] = em.reg[i as usize];
+                        em.memory[em.i as usize] = em.reg[i as usize];
+                        em.i += 1;
                     }
                 }
                 0x65 => { // load V0 to Vx from memory at I
                     for i in 0..=x as u16 {
-                        em.reg[i as usize] = em.memory[(em.i + i) as usize]
+                        em.reg[i as usize] = em.memory[em.i as usize];
+                        em.i += 1;
                     }
                 }
                 _ => unreachable!("invalid instruction")

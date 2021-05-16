@@ -88,16 +88,16 @@ fn instructions_8xyz() {
     test_reg_ops_flag!(0x8015: 0 1 => 255 + 0 for em);
 
     // 6 SHR Shift V0 right by one bit, overflow => flag
-    test_reg_ops_flag!(0x8016: 0b10000000 0 => 0b01000000 + 0 for em);
-    test_reg_ops_flag!(0x8016: 0b00000001 0 => 0b00000000 + 1 for em);
+    test_reg_ops_flag!(0x8016: 0 0b10000000 => 0b01000000 + 0 for em);
+    test_reg_ops_flag!(0x8016: 0 0b00000001 => 0b00000000 + 1 for em);
 
     // 7 Subtract V0 from V1, V1 > V0 => flag
     test_reg_ops_flag!(0x8017: 10 20 => 10 + 1 for em);
     test_reg_ops_flag!(0x8017: 1 0 => 255 + 0 for em);
 
     // E SHL Shift V0 left by one bit, overflow => flag
-    test_reg_ops_flag!(0x801E: 0b00000001 0 => 0b00000010 + 0 for em);
-    test_reg_ops_flag!(0x801E: 0b10000000 0 => 0b00000000 + 1 for em);
+    test_reg_ops_flag!(0x801E: 0 0b00000001 => 0b00000010 + 0 for em);
+    test_reg_ops_flag!(0x801E: 0 0b10000000 => 0b00000000 + 1 for em);
 }
 
 #[test]
