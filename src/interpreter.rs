@@ -3,6 +3,7 @@
 // https://en.wikipedia.org/wiki/CHIP-8
 use rand::Rng;
 
+#[derive(Debug, Clone)]
 #[allow(dead_code)]
 struct Emulator {
     memory: [u8; 4096],
@@ -13,6 +14,21 @@ struct Emulator {
     i: u16,
     delay_t: u8,
     sound_t: u8,
+}
+
+impl Default for Emulator {
+    fn default() -> Self {
+        Self {
+            memory: [0; 4096],
+            reg: [0; 16],
+            stack: [0; 16],
+            pc: 0,
+            sp: 0,
+            i: 0,
+            delay_t: 0,
+            sound_t: 0,
+        }
+    }
 }
 
 impl Emulator {
@@ -44,16 +60,7 @@ impl Emulator {
 
 
 pub fn run(program: &[u16]) {
-    let mut em = Emulator {
-        memory: [0; 4096],
-        reg: [0; 16],
-        stack: [0; 16],
-        pc: 0,
-        sp: 0,
-        i: 0,
-        delay_t: 0,
-        sound_t: 0,
-    };
+    let mut em = Emulator::default();
 
     while em.pc < program.len() as u16 {
         let instruction = program[em.pc as usize];
@@ -188,6 +195,7 @@ fn execute(instruction: u16, em: &mut Emulator) {
         }
         0xF000..=0xFFFF => { // misc
             let (x, sub_inst) = extract_0xii(instruction);
+            #[allow(unreachable_code)]
             match sub_inst {
                 0x0F => { // set Vx = delay timer value
                     em.reg[x] = em.delay_t;
@@ -208,9 +216,17 @@ fn execute(instruction: u16, em: &mut Emulator) {
                 0x29 => { // set I to location for the sprite with value Vx
                     unimplemented!()
                 }
-                0x33 => { // store a decimal representation of Vx at I, I+1, I+2
+                0x33 => { // store a decimal representation of Vx at I, I+1, I+2;
                     // convert Vx to decimal and store the digits, 100 -> I
-                    unimplemented!()
+                    let n = em.reg[x] as f32;
+                    let hundreds = (n / 100.0).floor();
+                    let n = n % 100.0;
+                    let tens = (n / 10.0).floor();
+                    let n = n % 10.0;
+
+                    em.memory[em.i as usize] = hundreds as u8;
+                    em.memory[(em.i + 1) as usize] = tens as u8;
+                    em.memory[(em.i + 2) as usize] = n as u8;
                 }
                 0x55 => { // store registers V0 to Vx in memory I
                     for i in 0..x as u16 {
@@ -225,37 +241,104 @@ fn execute(instruction: u16, em: &mut Emulator) {
                 _ => unreachable!("invalid instruction")
             }
         }
-
-        _ => unimplemented!()
+        // nop for testing
+        #[cfg(test)]
+        0x0000 => {}
+        _ => unreachable!("invalid instruction")
     }
 }
 
 
 fn extract_0xkk(value: u16) -> (usize, u8) {
-    let x = value & 0x0F00;
+    let x = (value & 0x0F00) >> 8;
     let kk = (value & 0x00FF) as u8;
     (x as usize, kk)
 }
 
 fn extract_0xy0(value: u16) -> (usize, usize) {
-    let x = value & 0x0F00;
-    let y = value & 0x00F0;
+    let x = (value & 0x0F00) >> 8;
+    let y = (value & 0x00F0) >> 4;
     (x as usize, y as usize)
 }
 
 fn extract_0xyz(value: u16) -> (usize, usize, u16) {
-    let x = value & 0x0F00;
-    let y = value & 0x00F0;
+    let x = (value & 0x0F00) >> 8;
+    let y = (value & 0x00F0) >> 4;
     let z = value & 0x000F;
     (x as usize, y as usize, z)
 }
 
 fn extract_0xii(value: u16) -> (usize, u8) {
-    let x = value & 0x0F00;
+    let x = (value & 0x0F00) >> 8;
     let ii = (value & 0x00FF) as u8;
     (x as usize, ii)
 }
 
 fn extract_0nnn(value: u16) -> u16 {
     value & 0xFFF
+}
+
+#[cfg(test)]
+mod test {
+    use crate::interpreter::{Emulator, execute};
+    use std::sync::atomic::Ordering::AcqRel;
+
+    #[test]
+    fn instructions_0_1_2() {
+        let mut em = Emulator::default();
+        em.pc = 10;
+        execute(0x20FF, &mut em); // call 0FF
+        assert_eq!(em.pc + 1, 0x0FF);
+        assert_eq!(em.sp, 1);
+        em.pc = 0x0FF;
+        execute(0x00EE, &mut em); // return
+        assert_eq!(em.sp, 0);
+        assert_eq!(em.pc, 10);
+        execute(0x10AB, &mut em); // jmp to 0AB
+        assert_eq!(em.pc + 1, 0x0AB);
+    }
+
+    #[test]
+    fn instructions_3_4_5() {
+        let mut em = Emulator::default();
+        em.reg[0] = 0xF2;
+        execute(0x30F2, &mut em);
+        assert_eq!(em.pc, 1);
+        execute(0x40F3, &mut em);
+        assert_eq!(em.pc, 2);
+        execute(0x40F2, &mut em);
+        assert_eq!(em.pc, 2);
+        em.reg[1] = 0xF2;
+        execute(0x5010, &mut em);
+        assert_eq!(em.pc, 3);
+    }
+
+    #[test]
+    fn instructions_6_7() {
+        let mut em = Emulator::default();
+        execute(0x60AB, &mut em);
+        assert_eq!(em.reg[0], 0xAB);
+        execute(0x69FF, &mut em);
+        assert_eq!(em.reg[9], 0xFF);
+        execute(0x7001, &mut em);
+        assert_eq!(em.reg[0], 0xAC);
+    }
+
+    #[test]
+    fn instruction_fx33_conversion() {
+        let mut em = Emulator::default();
+        em.reg[0] = 255;
+        em.reg[1] = 99;
+        em.reg[2] = 1;
+        let instruction1 = 0xF033;
+        let instruction2 = 0xF133;
+        let instruction3 = 0xF233;
+        execute(instruction1, &mut em);
+        em.i = 3;
+        execute(instruction2, &mut em);
+        em.i = 6;
+        execute(instruction3, &mut em);
+
+        assert_eq!(&em.memory[0..9], &[2, 5, 5, 0, 9, 9, 0, 0, 1]);
+    }
 }
