@@ -2,7 +2,7 @@ use crate::interpreter::{Chip8Vm, execute};
 
 #[test]
 fn instructions_0_1_2() {
-    let mut vm = Chip8Vm::default();
+    let mut vm = Chip8Vm::new();
     //frame clearing is not implemented yet.
     vm.pc = 10;
     execute(0x20FF, &mut vm); // call 0FF
@@ -18,7 +18,7 @@ fn instructions_0_1_2() {
 
 #[test]
 fn instructions_3_4_5() {
-    let mut vm = Chip8Vm::default();
+    let mut vm = Chip8Vm::new();
     vm.reg[0] = 0xF2;
     execute(0x30F2, &mut vm);
     assert_eq!(vm.pc, 1);
@@ -33,7 +33,7 @@ fn instructions_3_4_5() {
 
 #[test]
 fn instructions_6_7() {
-    let mut vm = Chip8Vm::default();
+    let mut vm = Chip8Vm::new();
     execute(0x60AB, &mut vm);
     assert_eq!(vm.reg[0], 0xAB);
     execute(0x69FF, &mut vm);
@@ -64,7 +64,7 @@ macro_rules! test_reg_ops_flag {
 
 #[test]
 fn instructions_8xyz() {
-    let mut vm = Chip8Vm::default();
+    let mut vm = Chip8Vm::new();
     vm.reg[1] = 2;
     // 0 store V1 in V0
     execute(0x8010, &mut vm);
@@ -102,7 +102,7 @@ fn instructions_8xyz() {
 
 #[test]
 fn instruction_9() {
-    let mut vm = Chip8Vm::default();
+    let mut vm = Chip8Vm::new();
     vm.reg[0] = 10;
     vm.reg[1] = 11;
     execute(0x9010, &mut vm);
@@ -113,7 +113,7 @@ fn instruction_9() {
 
 #[test]
 fn instruction_a_b_c() {
-    let mut vm = Chip8Vm::default();
+    let mut vm = Chip8Vm::new();
     execute(0xA123, &mut vm);
     assert_eq!(vm.i, 0x123);
     vm.reg[0] = 100;
@@ -128,7 +128,7 @@ fn instruction_a_b_c() {
 
 #[test]
 fn instruction_f() {
-    let mut vm = Chip8Vm::default();
+    let mut vm = Chip8Vm::new();
 
     vm.delay_t = 245;
     execute(0xF007, &mut vm);

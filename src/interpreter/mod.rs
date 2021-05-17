@@ -69,7 +69,7 @@ impl Chip8Vm {
 
 
 pub fn run(program: &[u16]) {
-    let mut vm = Chip8Vm::default();
+    let mut vm = Chip8Vm::new();
     vm.pc = 200;
 
     while vm.pc < program.len() as u16 {
@@ -281,9 +281,7 @@ fn extract_0xyz(value: u16) -> (usize, usize, u16) {
 }
 
 fn extract_0xii(value: u16) -> (usize, u8) {
-    let x = (value & 0x0F00) >> 8;
-    let ii = (value & 0x00FF) as u8;
-    (x as usize, ii)
+    extract_0xkk(value)
 }
 
 fn extract_0nnn(value: u16) -> u16 {
