@@ -1,2 +1,2 @@
 # chip-8
-A simple CHIP-8 emulator writtten in Rust
+A simple CHIP-8 VM writtten in Rust
